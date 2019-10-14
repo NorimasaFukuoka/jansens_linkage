@@ -1,3 +1,4 @@
+import argparse
 import os
 import numpy as np
 from PIL import Image
@@ -6,13 +7,14 @@ os.makedirs('figures', exist_ok=True)
 os.makedirs('gifs', exist_ok=True)
 
 
-def main():
+def main(n_legs=1):
     for rad in np.linspace(0, 2*np.pi, 60):
-        plot_jansen(rad)
-    files = [f'figures/{rad}rad.png' for rad in np.linspace(0, 2*np.pi, 60)]
+        plot_jansen(rad, n_legs)
+    files = [f'figures/{n_legs}legs_{rad}rad.png'
+             for rad in np.linspace(0, 2*np.pi, 60)]
     files = list(filter(lambda f: os.path.exists(f), files))
     imgs = list(map(lambda f: Image.open(f), files))
-    imgs[0].save(f'gifs/jansen_linkage.gif', save_all=True,
+    imgs[0].save(f'gifs/jansen_{n_legs}legs.gif', save_all=True,
                  append_images=imgs[1:], duration=20, loop=0)
 
 
@@ -65,15 +67,19 @@ def get_jansen_points(rad):
                                 (O, A, B, C, D, E, F, G))}
     return dic
 
-def plot_jansen(rad):
+def plot_jansen(rad, n_legs=1):
     plt.figure(figsize=(10, 8))
     ax = plt.subplot(111, aspect='equal')
     ax.set_xlim(-120, 120)
     ax.set_ylim(-100, 60)
     ax.grid()
-    lines = ('OA', 'OB', 'AB', 'AC', 'BC', 'BD',
+
+    a = np.linspace(0, 2*np.pi, 100)
+    ax.plot(15*np.cos(a), 15*np.sin(a))
+
+    lines = ('OA', 'OB', 'AC', 'BC', 'BD',
              'BE', 'CE', 'EF', 'DF', 'DG', 'FG')
-    for r in (rad, rad + np.pi):
+    for r in rad + np.linspace(0, np.pi, n_legs):
         left = get_jansen_points(r)
         right = {k: np.array([p[0]*-1, p[1]]) for k, p
                  in get_jansen_points(np.pi - r).items()}
@@ -81,9 +87,12 @@ def plot_jansen(rad):
             for line in lines:
                 v1, v2 = list(line)
                 ax.plot(*zip(points[v1], points[v2]), f'{c}-')
-    plt.savefig(f'figures/{rad}rad.png')
+    plt.savefig(f'figures/{n_legs}legs_{rad}rad.png')
     plt.close()
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--n_legs', type=int)
+    args = parser.parse_args()
+    main(args.n_legs)
